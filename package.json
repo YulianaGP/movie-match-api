@@ -1,0 +1,29 @@
+{
+  "name": "movie-match-api",
+  "version": "1.0.0",
+  "description": "Movie Match API - REST API for movie recommendations",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YulianaGP/movie-match-api.git"
+  },
+  "keywords": ["express", "rest-api", "movies", "backend", "node"],
+  "author": "Yuliana GP",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/YulianaGP/movie-match-api/issues"
+  },
+  "homepage": "https://github.com/YulianaGP/movie-match-api#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
