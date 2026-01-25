@@ -1,5 +1,6 @@
 import express from 'express';
 import moviesRouter from './src/routes/movies.routes.js';
+import 'dotenv/config';
 
 const app = express();
 const PORT = 3000;
@@ -17,7 +18,7 @@ app.get('/', (req, res) => {
 });
 
 // Movies routes
-app.use('/movies', moviesRouter);
+app.use('/api/movies', moviesRouter);
 
 // Start server
 app.listen(PORT, () => {

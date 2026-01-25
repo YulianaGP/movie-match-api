@@ -13,7 +13,13 @@
     "type": "git",
     "url": "git+https://github.com/YulianaGP/movie-match-api.git"
   },
-  "keywords": ["express", "rest-api", "movies", "backend", "node"],
+  "keywords": [
+    "express",
+    "rest-api",
+    "movies",
+    "backend",
+    "node"
+  ],
   "author": "Yuliana GP",
   "license": "ISC",
   "bugs": {
@@ -21,6 +27,7 @@
   },
   "homepage": "https://github.com/YulianaGP/movie-match-api#readme",
   "dependencies": {
+    "dotenv": "^17.2.3",
     "express": "^5.2.1"
   },
   "devDependencies": {

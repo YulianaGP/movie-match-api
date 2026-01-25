@@ -1,4 +1,5 @@
-import { getAllMovies, getMovieById, getRandomMovie, getStats } from '../services/movies.service.js';
+import { getAllMovies, getMovieById, getRandomMovie, getRandomMovies, getStats } from '../services/movies.service.js';
+import { enrichMoviesWithAI } from '../services/ai.service.js';
 import { sendSuccess, sendError } from '../utils/response.js';
 
 export const getAll = (req, res) => {
@@ -31,4 +32,17 @@ export const getRandom = (req, res) => {
 export const getMovieStats = (req, res) => {
   const stats = getStats();
   sendSuccess(res, stats);
+};
+
+export const discoverMovies = async (req, res) => {
+  try {
+    const count = Number(req.query.count) || 3;
+
+    const movies = getRandomMovies(count);
+    const enrichedMovies = await enrichMoviesWithAI(movies);
+
+    sendSuccess(res, enrichedMovies);
+  } catch (error) {
+    sendError(res, 500, 'Error al descubrir películas');
+  }
 };

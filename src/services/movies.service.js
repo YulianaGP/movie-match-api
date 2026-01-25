@@ -75,6 +75,14 @@ export const getRandomMovie = () => {
   return movies[randomIndex];
 };
 
+export const getRandomMovies = (count = 3) => {
+  const safeCount = Number.isInteger(count) && count > 0 ? count : 3;
+  const limit = Math.min(safeCount, movies.length);
+
+  const shuffled = [...movies].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, limit);
+};
+
 export const getStats = () => {
   return movies.reduce(
     (acc, movie) => {

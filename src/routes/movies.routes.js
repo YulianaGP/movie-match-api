@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAll, getById, getRandom, getMovieStats } from '../controllers/movies.controller.js';
+import { getAll, getById, getRandom, getMovieStats, discoverMovies } from '../controllers/movies.controller.js';
 
 const router = Router();
 
@@ -11,6 +11,9 @@ router.get('/stats', getMovieStats);
 
 // GET  /movies/random
 router.get('/random', getRandom);
+
+// GET  /movies/discover
+router.get('/discover', discoverMovies);
 
 // GET  /movies/:id
 router.get('/:id', getById);
