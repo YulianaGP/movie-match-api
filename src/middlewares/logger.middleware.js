@@ -1,0 +1,19 @@
+/**
+ * Logger Middleware
+ * Logs each request with timestamp, method, URL, status code and response time
+ */
+
+export const logger = (req, res, next) => {
+  const start = Date.now();
+  const timestamp = new Date().toISOString();
+
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const { method, originalUrl } = req;
+    const { statusCode } = res;
+
+    console.log(`[${timestamp}] ${method} ${originalUrl} ${statusCode} - ${duration}ms`);
+  });
+
+  next();
+};

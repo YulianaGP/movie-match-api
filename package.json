@@ -27,8 +27,11 @@
   },
   "homepage": "https://github.com/YulianaGP/movie-match-api#readme",
   "dependencies": {
+    "cors": "^2.8.6",
     "dotenv": "^17.2.3",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "swagger-ui-express": "^5.0.1",
+    "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"

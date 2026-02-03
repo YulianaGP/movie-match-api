@@ -4,7 +4,7 @@ A professional REST API to explore and discover movies from the IMDb Top 250. Bu
 
 ## Description
 
-Movie Match API is a backend application that provides endpoints to query, filter, sort, and paginate movies. It follows separation of concerns with dedicated layers for routes, controllers, services, and filters.
+Movie Match API is a backend application that provides endpoints to query, filter, sort, and paginate movies. It follows separation of concerns with dedicated layers for routes, controllers, services, filters, and middlewares.
 
 ## Technologies Used
 
@@ -12,6 +12,10 @@ Movie Match API is a backend application that provides endpoints to query, filte
 - **Express.js v5.2.1** - Minimalist and flexible web framework
 - **ES Modules (ESM)** - Modern JavaScript module system
 - **Nodemon v3.1.11** - Development tool for auto-reload
+- **Swagger UI Express** - Interactive API documentation
+- **YAMLJS** - YAML parser for OpenAPI spec
+- **CORS** - Cross-Origin Resource Sharing middleware
+- **dotenv** - Environment variable management
 
 ## Architecture
 
@@ -20,31 +24,67 @@ Movie Match API is a backend application that provides endpoints to query, filte
 ```
 movie-match-api/
 ├── data/
-│   └── movies.js                  # Dataset of 30 movies from IMDb Top 250
+│   └── movies.js                          # Dataset of 30 movies from IMDb Top 250
+├── docs/
+│   └── swagger.yaml                       # OpenAPI 3.0 documentation
 ├── src/
-│   ├── routes/
-│   │   └── movies.routes.js       # Endpoint definitions
 │   ├── controllers/
-│   │   └── movies.controller.js   # Request/response handling
+│   │   └── movies.controller.js           # Request/response handling
+│   ├── middlewares/
+│   │   ├── cors.middleware.js             # CORS configuration
+│   │   ├── errorHandler.middleware.js     # Global error handling
+│   │   ├── logger.middleware.js           # Request logging with timestamp
+│   │   ├── notFound.middleware.js         # Centralized 404 handler
+│   │   └── index.js                      # Barrel export for middlewares
+│   ├── routes/
+│   │   └── movies.routes.js              # Endpoint definitions
 │   ├── services/
-│   │   ├── movies.service.js      # Business logic, sorting, pagination
-│   │   └── ai.service.js          # AI enrichment via OpenRouter
+│   │   ├── movies.service.js             # Business logic, sorting, pagination
+│   │   └── ai.service.js                 # AI enrichment via OpenRouter
 │   ├── filters/
-│   │   └── movies.filters.js      # Pure filter functions
+│   │   └── movies.filters.js             # Pure filter functions
 │   └── utils/
-│       └── response.js            # Response format helpers
-├── index.js                       # Server bootstrap
-├── package.json
+│       └── response.js                   # Response format helpers
+├── .env.example                           # Environment variables template
 ├── .gitignore
+├── index.js                               # Server bootstrap
+├── package.json
 └── README.md
 ```
 
 ### Design Patterns
 
 - **MVC Architecture**: Routes → Controllers → Services → Data
+- **Middleware Pipeline**: CORS → Logger → Body Parser → Routes → NotFound → ErrorHandler
 - **Pure Functions**: Filters with no side effects
+- **Barrel Exports**: Single entry point for middlewares
 - **Graceful Degradation**: AI features fail silently
 - **ES Modules**: Modern `import/export` syntax
+
+## Middlewares
+
+The API includes a professional middleware pipeline:
+
+| Middleware       | File                         | Description                                      |
+|------------------|------------------------------|--------------------------------------------------|
+| CORS             | `cors.middleware.js`         | Centralized Cross-Origin configuration           |
+| Logger           | `logger.middleware.js`       | Logs each request with timestamp and duration    |
+| Body Parser      | Built-in `express.json()`   | Parses JSON request bodies                       |
+| Not Found        | `notFound.middleware.js`     | Returns standardized 404 for undefined routes    |
+| Error Handler    | `errorHandler.middleware.js` | Catches unhandled errors with environment-aware response |
+
+### Middleware Execution Order
+
+```
+Request → CORS → Logger → express.json() → Routes → NotFound → ErrorHandler → Response
+```
+
+### Logger Output Example
+
+```
+[2026-01-29T10:30:45.123Z] GET /api/movies 200 - 12ms
+[2026-01-29T10:30:46.456Z] GET /api/movies/999 404 - 3ms
+```
 
 ## API Endpoints
 
@@ -57,11 +97,14 @@ GET /
 **Response:**
 ```json
 {
-  "message": "Welcome to Movie Match API 🎬",
+  "message": "Welcome to Movie Match API",
   "endpoints": {
-    "allMovies": "GET /movies",
-    "movieById": "GET /movies/:id",
-    "randomMovie": "GET /movies/random"
+    "allMovies": "GET /api/movies",
+    "movieById": "GET /api/movies/:id",
+    "randomMovie": "GET /api/movies/random",
+    "stats": "GET /api/movies/stats",
+    "discover": "GET /api/movies/discover",
+    "documentation": "GET /docs"
   }
 }
 ```
@@ -219,6 +262,14 @@ Returns random movies enriched with AI-generated content (anecdotes, fun facts, 
 
 > **Note:** If `OPENROUTER_API_KEY` is not set, movies are returned with `ai_enriched: null`.
 
+### 7. API Documentation (Swagger UI)
+
+```http
+GET /docs
+```
+
+Interactive API documentation powered by Swagger UI. Allows testing all endpoints directly from the browser.
+
 ## Installation and Usage
 
 ### Prerequisites
@@ -239,7 +290,7 @@ cd movie-match-api
 npm install
 ```
 
-3. Configure environment variables (optional, for AI features):
+3. Configure environment variables:
 ```bash
 cp .env.example .env
 # Edit .env and add your OpenRouter API key
@@ -247,9 +298,11 @@ cp .env.example .env
 
 ### Environment Variables
 
-| Variable            | Description                | Required |
-|---------------------|----------------------------|----------|
-| OPENROUTER_API_KEY  | API key from OpenRouter    | No*      |
+| Variable            | Description                          | Required | Default |
+|---------------------|--------------------------------------|----------|---------|
+| PORT                | Server port                          | No       | 3000    |
+| OPENROUTER_API_KEY  | API key from OpenRouter              | No*      | -       |
+| CORS_ORIGIN         | Allowed origins for CORS             | No       | *       |
 
 *Required only for the `/api/movies/discover` AI enrichment feature.
 
@@ -269,17 +322,22 @@ The server will be available at `http://localhost:3000`
 
 ### Testing the API
 
-**Option 1: Browser**
+**Option 1: Swagger UI**
+```
+http://localhost:3000/docs
+```
+
+**Option 2: Browser**
 ```
 http://localhost:3000/api/movies?genre=action&sortBy=rating&order=desc
 ```
 
-**Option 2: cURL**
+**Option 3: cURL**
 ```bash
 curl "http://localhost:3000/api/movies?sortBy=rating&order=desc&page=1&limit=5"
 ```
 
-**Option 3: Thunder Client / Postman**
+**Option 4: Thunder Client / Postman**
 - Method: GET
 - URL: `http://localhost:3000/api/movies/discover?count=3`
 
@@ -291,7 +349,7 @@ curl "http://localhost:3000/api/movies?sortBy=rating&order=desc&page=1&limit=5"
 
 ## Labs Completed
 
-### Lab 10: Professional REST ✅
+### Lab 10: Professional REST API
 
 - Filters: genre, minRating, year, director (combinable)
 - Sorting: by title, rating, or year (asc/desc)
@@ -300,23 +358,37 @@ curl "http://localhost:3000/api/movies?sortBy=rating&order=desc&page=1&limit=5"
 - Modular MVC architecture
 - Consistent response format
 
-### Lab 11: AI Integration ✅
+### Lab 11: AI Integration
 
 - **AI Service**: OpenRouter integration with Llama 3.2
 - **Discover Endpoint**: `GET /api/movies/discover`
 - **Graceful Degradation**: Works without API key (returns `ai_enriched: null`)
 
+### Lab 12: Middleware, Documentation & Deploy Preparation
+
+- **Middlewares**: Logger, CORS, NotFound (404), ErrorHandler (500)
+- **Middleware Pipeline**: Professional execution order with centralized error handling
+- **Swagger Documentation**: Full OpenAPI 3.0 spec with reusable schemas
+- **Swagger UI**: Interactive docs at `/docs`
+- **Environment Variables**: `process.env.PORT` with fallback, `.env.example` template
+- **Deploy Ready**: CORS configured, error handling environment-aware (dev vs production)
+
 ## Layer Responsibilities
 
-| Layer      | File                    | Responsibility                          |
-|------------|-------------------------|-----------------------------------------|
-| Bootstrap  | `index.js`              | Initialize Express, mount router        |
-| Routes     | `movies.routes.js`      | Define endpoints, delegate to controller|
-| Controller | `movies.controller.js`  | Handle req/res, orchestrate services    |
-| Service    | `movies.service.js`     | Business logic, sorting, pagination     |
-| Service    | `ai.service.js`         | AI enrichment via OpenRouter            |
-| Filters    | `movies.filters.js`     | Pure filter functions                   |
-| Utils      | `response.js`           | Standardized response helpers           |
+| Layer       | File                         | Responsibility                          |
+|-------------|------------------------------|-----------------------------------------|
+| Bootstrap   | `index.js`                   | Initialize Express, middlewares, routes  |
+| Middleware  | `logger.middleware.js`       | Log requests with timestamp             |
+| Middleware  | `cors.middleware.js`         | CORS configuration                      |
+| Middleware  | `notFound.middleware.js`     | Centralized 404 handler                 |
+| Middleware  | `errorHandler.middleware.js` | Global error handler                    |
+| Routes      | `movies.routes.js`           | Define endpoints, delegate to controller|
+| Controller  | `movies.controller.js`       | Handle req/res, orchestrate services    |
+| Service     | `movies.service.js`          | Business logic, sorting, pagination     |
+| Service     | `ai.service.js`              | AI enrichment via OpenRouter            |
+| Filters     | `movies.filters.js`          | Pure filter functions                   |
+| Utils       | `response.js`                | Standardized response helpers           |
+| Docs        | `swagger.yaml`               | OpenAPI 3.0 specification               |
 
 ## Author
 

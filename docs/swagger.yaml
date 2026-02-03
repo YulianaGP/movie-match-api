@@ -1,0 +1,346 @@
+openapi: 3.0.0
+info:
+  title: Movie Match API
+  description: API profesional para búsqueda y descubrimiento de películas con integración de IA
+  version: 1.0.0
+  contact:
+    name: Movie Match API Support
+
+servers:
+  - url: http://localhost:3000
+    description: Servidor de desarrollo
+
+tags:
+  - name: Movies
+    description: Operaciones relacionadas con películas
+
+paths:
+  /api/movies:
+    get:
+      tags:
+        - Movies
+      summary: Obtener todas las películas
+      description: Retorna lista de películas con soporte para filtros, ordenamiento y paginación
+      parameters:
+        - name: genre
+          in: query
+          schema:
+            type: string
+          description: Filtrar por género (ej. drama, action, crime)
+          example: drama
+        - name: minRating
+          in: query
+          schema:
+            type: number
+            format: float
+          description: Filtrar por rating mínimo (0-10)
+          example: 8.5
+        - name: year
+          in: query
+          schema:
+            type: integer
+          description: Filtrar por año de lanzamiento
+          example: 1994
+        - name: director
+          in: query
+          schema:
+            type: string
+          description: Filtrar por director (búsqueda parcial)
+          example: nolan
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [title, rating, year]
+          description: Campo por el cual ordenar
+          example: rating
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+          description: Orden ascendente o descendente
+          example: desc
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+          description: Número de página para paginación
+          example: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+          description: Cantidad de resultados por página
+          example: 10
+      responses:
+        '200':
+          description: Lista de películas obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MoviesResponse'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/movies/stats:
+    get:
+      tags:
+        - Movies
+      summary: Obtener estadísticas de películas
+      description: Retorna estadísticas agregadas como distribución por género y conteos
+      responses:
+        '200':
+          description: Estadísticas obtenidas exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatsResponse'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/movies/random:
+    get:
+      tags:
+        - Movies
+      summary: Obtener una película aleatoria
+      description: Retorna una película seleccionada al azar del catálogo
+      responses:
+        '200':
+          description: Película aleatoria obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SingleMovieResponse'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/movies/discover:
+    get:
+      tags:
+        - Movies
+      summary: Descubrir películas con enriquecimiento de IA
+      description: Retorna películas aleatorias enriquecidas con anécdotas, datos curiosos y pitches generados por IA
+      parameters:
+        - name: count
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 30
+            default: 3
+          description: Cantidad de películas a retornar (1-30)
+          example: 3
+      responses:
+        '200':
+          description: Películas con enriquecimiento de IA
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoverResponse'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/movies/{id}:
+    get:
+      tags:
+        - Movies
+      summary: Obtener película por ID
+      description: Retorna una película específica según su ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID único de la película
+          example: 1
+      responses:
+        '200':
+          description: Película encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SingleMovieResponse'
+        '404':
+          description: Película no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    Movie:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: ID único de la película
+          example: 1
+        title:
+          type: string
+          description: Título de la película
+          example: The Shawshank Redemption
+        year:
+          type: integer
+          description: Año de lanzamiento
+          example: 1994
+        genre:
+          type: array
+          items:
+            type: string
+          description: Géneros de la película
+          example: [Drama]
+        rating:
+          type: number
+          format: float
+          description: Rating en IMDb (0-10)
+          example: 9.3
+        director:
+          type: string
+          description: Director de la película
+          example: Frank Darabont
+        description:
+          type: string
+          description: Sinopsis de la película
+          example: Two imprisoned men bond over a number of years...
+
+    MovieWithAI:
+      allOf:
+        - $ref: '#/components/schemas/Movie'
+        - type: object
+          properties:
+            ai_enriched:
+              type: object
+              properties:
+                anecdote:
+                  type: string
+                  description: Anécdota interesante sobre la película
+                fun_fact:
+                  type: string
+                  description: Dato curioso de la película
+                pitch:
+                  type: string
+                  description: Pitch breve de la película
+
+    MoviesResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        count:
+          type: integer
+          description: Cantidad de películas retornadas
+          example: 10
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Movie'
+
+    SingleMovieResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        count:
+          type: integer
+          example: 1
+        data:
+          $ref: '#/components/schemas/Movie'
+
+    DiscoverResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        count:
+          type: integer
+          example: 3
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/MovieWithAI'
+
+    StatsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            totalMovies:
+              type: integer
+              description: Total de películas en el catálogo
+              example: 30
+            genres:
+              type: object
+              additionalProperties:
+                type: integer
+              description: Distribución de películas por género
+              example:
+                Drama: 15
+                Crime: 8
+                Action: 5
+
+    Pagination:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total de películas disponibles
+          example: 30
+        page:
+          type: integer
+          description: Página actual
+          example: 1
+        limit:
+          type: integer
+          description: Límite por página
+          example: 10
+        totalPages:
+          type: integer
+          description: Total de páginas
+          example: 3
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          description: Mensaje de error
+          example: Movie with id 999 not found

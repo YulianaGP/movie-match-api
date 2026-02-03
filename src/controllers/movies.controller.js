@@ -43,6 +43,6 @@ export const discoverMovies = async (req, res) => {
 
     sendSuccess(res, enrichedMovies);
   } catch (error) {
-    sendError(res, 500, 'Error al descubrir películas');
+    sendError(res, 500, 'Error discovering movies');
   }
 };
