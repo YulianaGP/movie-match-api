@@ -1,94 +1,112 @@
-import { movies } from '../../data/movies.js';
-import {
-  filterByGenre,
-  filterByMinRating,
-  filterByYear,
-  filterByDirector
-} from '../filters/movies.filters.js';
+import prisma from '../lib/prisma.js';
 
-const applyFilters = (data, filters) => {
-  let result = [...data];
+// Allowed fields for sorting
+const ALLOWED_SORT_FIELDS = ['title', 'rating', 'year'];
+
+/**
+ * Get all movies with filters, sorting and pagination
+ */
+export const getAllMovies = async (filters = {}) => {
+  // Build the "where" object for filters
+  const where = {};
 
   if (filters.genre) {
-    result = filterByGenre(result, filters.genre);
+    where.genre = { has: filters.genre };
   }
 
   if (filters.minRating) {
-    result = filterByMinRating(result, Number(filters.minRating));
+    where.rating = { gte: Number(filters.minRating) };
   }
 
   if (filters.year) {
-    result = filterByYear(result, Number(filters.year));
+    where.year = Number(filters.year);
   }
 
   if (filters.director) {
-    result = filterByDirector(result, filters.director);
+    where.director = { contains: filters.director, mode: 'insensitive' };
   }
 
-  return result;
+  // Build sorting
+  let orderBy = undefined;
+  if (filters.sortBy && ALLOWED_SORT_FIELDS.includes(filters.sortBy)) {
+    orderBy = { [filters.sortBy]: filters.order === 'desc' ? 'desc' : 'asc' };
+  }
+
+  // Build pagination
+  const page = Number(filters.page) || 1;
+  const limit = Number(filters.limit) || undefined;
+  const skip = limit ? (page - 1) * limit : undefined;
+
+  // Execute query and get total count in parallel
+  const [movies, total] = await Promise.all([
+    prisma.movie.findMany({
+      where,
+      orderBy,
+      skip,
+      take: limit,
+    }),
+    prisma.movie.count({ where }),
+  ]);
+
+  return { movies, total };
 };
 
-const ALLOWED_SORT_FIELDS = ['title', 'rating', 'year'];
-
-const applySorting = (data, sortBy, order = 'asc') => {
-  if (!ALLOWED_SORT_FIELDS.includes(sortBy)) {
-    return data;
-  }
-
-  const direction = order === 'desc' ? -1 : 1;
-
-  return [...data].sort((a, b) => {
-    if (typeof a[sortBy] === 'string') {
-      return direction * a[sortBy].localeCompare(b[sortBy]);
-    }
-    return direction * (a[sortBy] - b[sortBy]);
+/**
+ * Get a movie by its ID
+ */
+export const getMovieById = async (id) => {
+  const movie = await prisma.movie.findUnique({
+    where: { id },
   });
+  return movie;
 };
 
-const applyPagination = (data, page, limit) => {
-  if (page < 1 || limit < 1) return data;
+/**
+ * Get a random movie
+ */
+export const getRandomMovie = async () => {
+  const count = await prisma.movie.count();
+  if (count === 0) return null;
 
-  const start = (page - 1) * limit;
-  return data.slice(start, start + limit);
+  const randomIndex = Math.floor(Math.random() * count);
+  const movies = await prisma.movie.findMany({
+    skip: randomIndex,
+    take: 1,
+  });
+
+  return movies[0] || null;
 };
 
-export const getAllMovies = (filters = {}) => {
-  let result = applyFilters(movies, filters);
+/**
+ * Get multiple random movies
+ */
+export const getRandomMovies = async (count = 3) => {
+  const totalMovies = await prisma.movie.count();
+  if (totalMovies === 0) return [];
 
-  if (filters.sortBy) {
-    result = applySorting(result, filters.sortBy, filters.order);
-  }
+  const safeCount = Math.min(count, totalMovies);
 
-  if (filters.page && filters.limit) {
-    result = applyPagination(result, Number(filters.page), Number(filters.limit));
-  }
+  // Get all movies and shuffle (for small datasets)
+  // For large datasets, a different strategy would be used
+  const allMovies = await prisma.movie.findMany();
+  const shuffled = allMovies.sort(() => Math.random() - 0.5);
 
-  return result;
+  return shuffled.slice(0, safeCount);
 };
 
-export const getMovieById = (id) => {
-  return movies.find(movie => movie.id === id);
-};
+/**
+ * Get movie statistics
+ */
+export const getStats = async () => {
+  const movies = await prisma.movie.findMany({
+    select: { genre: true },
+  });
 
-export const getRandomMovie = () => {
-  const randomIndex = Math.floor(Math.random() * movies.length);
-  return movies[randomIndex];
-};
-
-export const getRandomMovies = (count = 3) => {
-  const safeCount = Number.isInteger(count) && count > 0 ? count : 3;
-  const limit = Math.min(safeCount, movies.length);
-
-  const shuffled = [...movies].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, limit);
-};
-
-export const getStats = () => {
-  return movies.reduce(
+  const stats = movies.reduce(
     (acc, movie) => {
       acc.totalMovies += 1;
 
-      movie.genre.forEach(g => {
+      movie.genre.forEach((g) => {
         acc.byGenre[g] = (acc.byGenre[g] || 0) + 1;
       });
 
@@ -96,4 +114,37 @@ export const getStats = () => {
     },
     { totalMovies: 0, byGenre: {} }
   );
+
+  return stats;
+};
+
+/**
+ * Create a new movie
+ */
+export const createMovie = async (movieData) => {
+  const movie = await prisma.movie.create({
+    data: movieData,
+  });
+  return movie;
+};
+
+/**
+ * Update an existing movie
+ */
+export const updateMovie = async (id, movieData) => {
+  const movie = await prisma.movie.update({
+    where: { id },
+    data: movieData,
+  });
+  return movie;
+};
+
+/**
+ * Delete a movie
+ */
+export const deleteMovie = async (id) => {
+  const movie = await prisma.movie.delete({
+    where: { id },
+  });
+  return movie;
 };
