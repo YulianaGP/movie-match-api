@@ -4,6 +4,7 @@ import {
   getById,
   getRandom,
   getMovieStats,
+  getMovieGenres,
   discoverMovies,
   create,
   update,
@@ -23,6 +24,9 @@ router.get('/random', getRandom);
 
 // GET  /movies/discover - Discover movies with AI
 router.get('/discover', discoverMovies);
+
+// GET  /movies/genres - Valid genre list
+router.get('/genres', getMovieGenres);
 
 // GET  /movies/:id - Get movie by ID
 router.get('/:id', getById);

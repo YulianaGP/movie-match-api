@@ -1,7 +1,36 @@
 import prisma from '../lib/prisma.js';
+import { Genre } from '@prisma/client';
 
 // Allowed fields for sorting
 const ALLOWED_SORT_FIELDS = ['title', 'rating', 'year'];
+
+// Valid genre values from Prisma enum
+const VALID_GENRES = Object.values(Genre);
+
+// Display labels for each genre
+const GENRE_LABELS = {
+  ACTION: 'Action',
+  COMEDY: 'Comedy',
+  DRAMA: 'Drama',
+  HORROR: 'Horror',
+  SCIFI: 'Sci-Fi',
+  THRILLER: 'Thriller',
+};
+
+/**
+ * Get all valid genres with display labels
+ */
+export const getGenres = () => {
+  return VALID_GENRES.map((value) => ({
+    value,
+    label: GENRE_LABELS[value] || value,
+  }));
+};
+
+/**
+ * Check if a genre value is valid
+ */
+export const isValidGenre = (genre) => VALID_GENRES.includes(genre);
 
 /**
  * Get all movies with filters, sorting and pagination

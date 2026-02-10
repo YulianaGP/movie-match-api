@@ -4,6 +4,8 @@ import {
   getRandomMovie,
   getRandomMovies,
   getStats,
+  getGenres,
+  isValidGenre,
   createMovie,
   updateMovie,
   deleteMovie
@@ -73,6 +75,11 @@ export const getMovieStats = async (req, res) => {
   }
 };
 
+// GET /movies/genres - Get valid genres
+export const getMovieGenres = (req, res) => {
+  sendSuccess(res, getGenres());
+};
+
 // GET /movies/discover - Discover movies with AI
 export const discoverMovies = async (req, res) => {
   try {
@@ -97,10 +104,17 @@ export const create = async (req, res) => {
       return sendError(res, 400, 'All fields are required: title, year, genre, rating, director, description');
     }
 
+    // Validate genres against enum
+    const genreArray = Array.isArray(genre) ? genre : [genre];
+    const invalidGenres = genreArray.filter((g) => !isValidGenre(g));
+    if (invalidGenres.length > 0) {
+      return sendError(res, 400, `Invalid genre(s): ${invalidGenres.join(', ')}. Valid genres: ${getGenres().map((g) => g.value).join(', ')}`);
+    }
+
     const movieData = {
       title,
       year: Number(year),
-      genre: Array.isArray(genre) ? genre : [genre],
+      genre: genreArray,
       rating: Number(rating),
       director,
       description
@@ -129,6 +143,15 @@ export const update = async (req, res) => {
     }
 
     const { title, year, genre, rating, director, description } = req.body;
+
+    // Validate genres if provided
+    if (genre) {
+      const genreArray = Array.isArray(genre) ? genre : [genre];
+      const invalidGenres = genreArray.filter((g) => !isValidGenre(g));
+      if (invalidGenres.length > 0) {
+        return sendError(res, 400, `Invalid genre(s): ${invalidGenres.join(', ')}. Valid genres: ${getGenres().map((g) => g.value).join(', ')}`);
+      }
+    }
 
     const movieData = {};
     if (title) movieData.title = title;

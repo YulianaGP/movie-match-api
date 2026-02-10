@@ -95,6 +95,7 @@ movie-match/
 | GET    | `/api/movies/:id`      | Get movie by ID                    |
 | GET    | `/api/movies/random`   | Get a random movie                 |
 | GET    | `/api/movies/stats`    | Movie statistics by genre          |
+| GET    | `/api/movies/genres`   | Valid genre list (from enum)       |
 | GET    | `/api/movies/discover` | AI-enriched random movies          |
 | GET    | `/docs`                | Swagger UI documentation           |
 
@@ -110,7 +111,7 @@ movie-match/
 
 | Parameter  | Description                        | Example              |
 |------------|------------------------------------|----------------------|
-| genre      | Filter by genre                    | `?genre=Drama`       |
+| genre      | Filter by genre (enum value)       | `?genre=ACTION`      |
 | minRating  | Minimum rating                     | `?minRating=8.5`     |
 | year       | Filter by year                     | `?year=1994`         |
 | director   | Partial match (case-insensitive)   | `?director=nolan`    |
@@ -269,6 +270,14 @@ npm run dev
 - Database seeding with 30 movies
 - React frontend with Vite
 - UI features: movie list, create/edit/delete, filters, pagination
+
+### Lab 14: Enums, Constraints & Filters
+- Prisma enum `Genre` with 6 values: ACTION, COMEDY, DRAMA, HORROR, SCIFI, THRILLER
+- Normalized 16 legacy genres to 6 enum values via mapping
+- Genre validation on POST/PUT (rejects invalid genres with 400)
+- New endpoint: `GET /api/movies/genres` (dynamic, not hardcoded)
+- Frontend dropdowns and checkboxes consume genres from API
+- Combined filters: genre + minRating + director + year
 
 ## Author
 
