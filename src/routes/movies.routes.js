@@ -10,6 +10,7 @@ import {
   update,
   remove
 } from '../controllers/movies.controller.js';
+import reviewsRouter from './reviews.routes.js';
 
 const router = Router();
 
@@ -27,6 +28,9 @@ router.get('/discover', discoverMovies);
 
 // GET  /movies/genres - Valid genre list
 router.get('/genres', getMovieGenres);
+
+// Reviews nested routes: /movies/:movieId/reviews
+router.use('/:movieId/reviews', reviewsRouter);
 
 // GET  /movies/:id - Get movie by ID
 router.get('/:id', getById);

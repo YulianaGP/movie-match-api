@@ -39,7 +39,8 @@ movie-match/
 │   │   └── swagger.yaml                    # OpenAPI 3.0 documentation
 │   ├── src/
 │   │   ├── controllers/
-│   │   │   └── movies.controller.js        # Request/response handling (async)
+│   │   │   ├── movies.controller.js        # Movie request/response handling
+│   │   │   └── reviews.controller.js       # Review validation and HTTP logic
 │   │   ├── lib/
 │   │   │   └── prisma.js                   # Prisma client singleton
 │   │   ├── middlewares/
@@ -49,9 +50,11 @@ movie-match/
 │   │   │   ├── notFound.middleware.js       # Centralized 404 handler
 │   │   │   └── index.js                    # Barrel export for middlewares
 │   │   ├── routes/
-│   │   │   └── movies.routes.js            # Endpoint definitions (CRUD)
+│   │   │   ├── movies.routes.js            # Movie endpoint definitions (CRUD)
+│   │   │   └── reviews.routes.js           # Review nested routes (mergeParams)
 │   │   ├── services/
-│   │   │   ├── movies.service.js           # Business logic with Prisma queries
+│   │   │   ├── movies.service.js           # Movie business logic with Prisma
+│   │   │   ├── reviews.service.js          # Review CRUD operations
 │   │   │   └── ai.service.js               # AI enrichment via OpenRouter
 │   │   ├── filters/
 │   │   │   └── movies.filters.js           # Pure filter functions (legacy)
@@ -106,6 +109,15 @@ movie-match/
 | POST   | `/api/movies`         | Create a new movie  |
 | PUT    | `/api/movies/:id`     | Update a movie      |
 | DELETE | `/api/movies/:id`     | Delete a movie      |
+
+### Review Operations
+
+| Method | Endpoint                                  | Description                  |
+|--------|-------------------------------------------|------------------------------|
+| GET    | `/api/movies/:movieId/reviews`            | List reviews for a movie     |
+| POST   | `/api/movies/:movieId/reviews`            | Create a review              |
+| PUT    | `/api/movies/:movieId/reviews/:reviewId`  | Update a review              |
+| DELETE | `/api/movies/:movieId/reviews/:reviewId`  | Delete a review              |
 
 ### Query Parameters (GET /api/movies)
 
@@ -278,6 +290,16 @@ npm run dev
 - New endpoint: `GET /api/movies/genres` (dynamic, not hardcoded)
 - Frontend dropdowns and checkboxes consume genres from API
 - Combined filters: genre + minRating + director + year
+
+### Lab 15: One-to-Many Relationship — Reviews
+- New `Review` model with 1:N relation to `Movie` (Prisma)
+- Cascade delete: removing a movie deletes its reviews
+- Full CRUD: getByMovie, getById, create, update, delete
+- Nested routes with `mergeParams: true`
+- `getMovieById` now includes reviews sorted by newest first
+- `sendSuccess` helper updated to accept optional HTTP status code
+- Input validation in controller: author, comment (required), rating (1-5)
+- Zero impact on existing movie endpoints, filters, and genre logic
 
 ## Author
 

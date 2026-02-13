@@ -1,7 +1,7 @@
-export const sendSuccess = (res, data) => {
+export const sendSuccess = (res, data, status = 200) => {
   const count = Array.isArray(data) ? data.length : 1;
 
-  res.json({
+  res.status(status).json({
     success: true,
     count,
     data

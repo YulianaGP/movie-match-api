@@ -86,6 +86,7 @@ export const getAllMovies = async (filters = {}) => {
 export const getMovieById = async (id) => {
   const movie = await prisma.movie.findUnique({
     where: { id },
+    include: { reviews: { orderBy: { createdAt: 'desc' } } },
   });
   return movie;
 };

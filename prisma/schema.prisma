@@ -30,4 +30,15 @@ model Movie {
   rating      Float
   director    String
   description String
+  reviews     Review[]
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  movieId   Int
+  author    String
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now())
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
 }
