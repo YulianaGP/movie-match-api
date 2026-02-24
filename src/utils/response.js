@@ -7,10 +7,3 @@ export const sendSuccess = (res, data, status = 200) => {
     data
   });
 };
-
-export const sendError = (res, status, message) => {
-  res.status(status).json({
-    success: false,
-    error: message
-  });
-};

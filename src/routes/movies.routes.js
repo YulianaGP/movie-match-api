@@ -3,7 +3,6 @@ import {
   getAll,
   getById,
   getRandom,
-  getMovieStats,
   getMovieGenres,
   discoverMovies,
   search,
@@ -33,9 +32,6 @@ router.get('/', getAll);
 
 // GET  /movies/search — Advanced search with Zod-validated query params
 router.get('/search', validate(searchQuerySchema, 'query'), search);
-
-// GET  /movies/stats — Movie statistics
-router.get('/stats', getMovieStats);
 
 // GET  /movies/random — Random movie
 router.get('/random', getRandom);

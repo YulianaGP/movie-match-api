@@ -28,7 +28,6 @@ app.get('/', (req, res) => {
       allMovies: 'GET /api/movies',
       movieById: 'GET /api/movies/:id',
       randomMovie: 'GET /api/movies/random',
-      stats: 'GET /api/movies/stats',
       search: 'GET /api/movies/search',
       discover: 'GET /api/movies/discover',
       dashboard: 'GET /api/dashboard',

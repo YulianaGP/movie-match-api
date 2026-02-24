@@ -126,29 +126,6 @@ export const getRandomMovies = async (count = 3) => {
   return shuffled.slice(0, safeCount);
 };
 
-/**
- * Get movie statistics
- */
-export const getStats = async () => {
-  const movies = await prisma.movie.findMany({
-    select: { genre: true },
-  });
-
-  const stats = movies.reduce(
-    (acc, movie) => {
-      acc.totalMovies += 1;
-
-      movie.genre.forEach((g) => {
-        acc.byGenre[g] = (acc.byGenre[g] || 0) + 1;
-      });
-
-      return acc;
-    },
-    { totalMovies: 0, byGenre: {} }
-  );
-
-  return stats;
-};
 
 /**
  * Create a new movie

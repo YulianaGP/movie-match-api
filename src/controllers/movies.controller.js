@@ -3,7 +3,6 @@ import {
   getMovieById,
   getRandomMovie,
   getRandomMovies,
-  getStats,
   getGenres,
   searchMovies,
   createMovie,
@@ -76,12 +75,6 @@ export const getRandom = async (req, res) => {
   }
 
   sendSuccess(res, toMovieResponse(movie));
-};
-
-// GET /movies/stats — Basic statistics (kept for backward compatibility)
-export const getMovieStats = async (req, res) => {
-  const stats = await getStats();
-  sendSuccess(res, stats);
 };
 
 // GET /movies/genres — Valid genre list (synchronous, no DB call)
