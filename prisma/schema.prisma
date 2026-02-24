@@ -31,6 +31,11 @@ model Movie {
   director    String
   description String
   reviews     Review[]
+
+  // Indices speed up WHERE/ORDER BY queries on these columns.
+  // Without them, PostgreSQL scans every row (slow on large tables).
+  @@index([rating])
+  @@index([year])
 }
 
 model Review {
@@ -41,4 +46,11 @@ model Review {
   comment   String
   createdAt DateTime @default(now())
   movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  // movieId index: speeds up JOINs and "get reviews for movie X" queries
+  // createdAt index: speeds up "recent reviews" sorted queries
+  // rating index: speeds up aggregations like AVG(rating)
+  @@index([movieId])
+  @@index([createdAt])
+  @@index([rating])
 }

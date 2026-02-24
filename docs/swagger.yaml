@@ -13,6 +13,8 @@ servers:
 tags:
   - name: Movies
     description: Operaciones relacionadas con películas
+  - name: Dashboard
+    description: Estadísticas y métricas agregadas
 
 paths:
   /api/movies:
@@ -152,6 +154,94 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DiscoverResponse'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/movies/search:
+    get:
+      tags:
+        - Movies
+      summary: Búsqueda avanzada de películas
+      description: Busca películas con filtros combinables, rango de años y paginación estandarizada
+      parameters:
+        - name: title
+          in: query
+          schema:
+            type: string
+          description: Búsqueda por título (case insensitive, parcial)
+          example: matrix
+        - name: genre
+          in: query
+          schema:
+            type: string
+            enum: [ACTION, COMEDY, DRAMA, HORROR, SCIFI, THRILLER]
+          description: Filtrar por género
+        - name: yearMin
+          in: query
+          schema:
+            type: integer
+          description: Año mínimo (inclusive)
+          example: 1990
+        - name: yearMax
+          in: query
+          schema:
+            type: integer
+          description: Año máximo (inclusive)
+          example: 2010
+        - name: ratingMin
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 10
+          description: Rating mínimo
+          example: 8.0
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Página actual
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Resultados por página
+      responses:
+        '200':
+          description: Resultados de búsqueda con paginación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '400':
+          description: Parámetros de búsqueda inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+
+  /api/dashboard:
+    get:
+      tags:
+        - Dashboard
+      summary: Obtener estadísticas del dashboard
+      description: Retorna estadísticas completas incluyendo totales, promedios, top películas, reviews recientes y distribución por género
+      responses:
+        '200':
+          description: Estadísticas del dashboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
         '500':
           description: Error interno del servidor
           content:
@@ -333,6 +423,127 @@ components:
           type: integer
           description: Total de páginas
           example: 3
+
+    SearchResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        count:
+          type: integer
+          example: 5
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Movie'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    DashboardResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            totalMovies:
+              type: integer
+              example: 30
+            totalReviews:
+              type: integer
+              example: 18
+            avgRating:
+              type: number
+              example: 4.4
+            moviesByGenre:
+              type: array
+              items:
+                type: object
+                properties:
+                  genre:
+                    type: string
+                    example: ACTION
+                  label:
+                    type: string
+                    example: Action
+                  count:
+                    type: integer
+                    example: 11
+                  avgRating:
+                    type: number
+                    example: 4.3
+            topRated:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  title:
+                    type: string
+                  rating:
+                    type: number
+                  year:
+                    type: integer
+                  reviewCount:
+                    type: integer
+            mostReviewed:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  title:
+                    type: string
+                  rating:
+                    type: number
+                  reviewCount:
+                    type: integer
+            recentReviews:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  author:
+                    type: string
+                  rating:
+                    type: integer
+                  comment:
+                    type: string
+                  createdAt:
+                    type: string
+                    format: date-time
+                  movieId:
+                    type: integer
+                  movieTitle:
+                    type: string
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: Validation failed
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: rating
+              message:
+                type: string
+                example: Rating must be at least 1
 
     ErrorResponse:
       type: object

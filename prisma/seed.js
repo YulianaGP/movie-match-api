@@ -245,19 +245,80 @@ const movies = [
   }
 ];
 
+/**
+ * Sample reviews for seeding.
+ * Distributed across different movies with varied ratings and dates
+ * to make the dashboard stats meaningful.
+ */
+const reviews = [
+  // Shawshank Redemption — multiple reviews to test "most reviewed"
+  { movieTitle: "The Shawshank Redemption", author: "CinemaFan", rating: 5, comment: "A masterpiece of storytelling. Every scene is perfect.", daysAgo: 2 },
+  { movieTitle: "The Shawshank Redemption", author: "MovieBuff", rating: 5, comment: "Morgan Freeman's narration elevates an already incredible film.", daysAgo: 5 },
+  { movieTitle: "The Shawshank Redemption", author: "ReviewerX", rating: 4, comment: "Slow start but builds to an unforgettable ending.", daysAgo: 12 },
+
+  // The Dark Knight — popular, varied ratings
+  { movieTitle: "The Dark Knight", author: "BatFan", rating: 5, comment: "Heath Ledger's Joker is the greatest villain performance ever.", daysAgo: 1 },
+  { movieTitle: "The Dark Knight", author: "ActionLover", rating: 4, comment: "Intense and gripping. Nolan at his best.", daysAgo: 7 },
+  { movieTitle: "The Dark Knight", author: "CasualViewer", rating: 3, comment: "Good but a bit long for my taste.", daysAgo: 20 },
+
+  // Inception — testing mid-range reviews
+  { movieTitle: "Inception", author: "DreamWalker", rating: 5, comment: "Mind-bending in the best way possible.", daysAgo: 3 },
+  { movieTitle: "Inception", author: "SkepticalSam", rating: 3, comment: "Visually stunning but the plot gets confusing.", daysAgo: 15 },
+
+  // Parasite — international cinema representation
+  { movieTitle: "Parasite", author: "WorldCinema", rating: 5, comment: "Bong Joon Ho crafted something truly original.", daysAgo: 4 },
+  { movieTitle: "Parasite", author: "FilmStudent", rating: 5, comment: "The genre shifts are seamless and brilliant.", daysAgo: 10 },
+
+  // The Godfather — classic reviews
+  { movieTitle: "The Godfather", author: "ClassicMovieLover", rating: 5, comment: "An offer you can't refuse — flawless cinema.", daysAgo: 30 },
+  { movieTitle: "The Godfather", author: "NoviceViewer", rating: 4, comment: "Great performances but the pacing is slow by modern standards.", daysAgo: 25 },
+
+  // Lower-rated reviews for variety
+  { movieTitle: "Memento", author: "PuzzleFan", rating: 4, comment: "Nolan's most creative narrative structure.", daysAgo: 8 },
+  { movieTitle: "Back to the Future", author: "RetroFan", rating: 5, comment: "Pure 80s joy. Still holds up perfectly.", daysAgo: 6 },
+  { movieTitle: "The Matrix", author: "TechGeek", rating: 4, comment: "Revolutionary for its time. The sequels didn't match it.", daysAgo: 14 },
+  { movieTitle: "Whiplash", author: "MusicLover", rating: 5, comment: "J.K. Simmons is terrifying and brilliant.", daysAgo: 9 },
+  { movieTitle: "Fight Club", author: "TwistHunter", rating: 4, comment: "The twist still hits even when you know it's coming.", daysAgo: 18 },
+  { movieTitle: "Spirited Away", author: "AnimeFan", rating: 5, comment: "Miyazaki's imagination knows no bounds.", daysAgo: 11 },
+];
+
 async function main() {
   console.log('Seeding database...');
 
-  // Delete existing movies to avoid duplicates
+  // Clear in correct order (reviews depend on movies)
+  await prisma.review.deleteMany();
   await prisma.movie.deleteMany();
-  console.log('Cleared existing movies.');
+  console.log('Cleared existing data.');
 
   // Insert all movies
   const result = await prisma.movie.createMany({
     data: movies,
   });
+  console.log(`Seeded ${result.count} movies.`);
 
-  console.log(`Seeded ${result.count} movies successfully.`);
+  // Insert reviews (need to look up movie IDs by title)
+  let reviewCount = 0;
+  for (const review of reviews) {
+    const movie = await prisma.movie.findFirst({
+      where: { title: review.movieTitle },
+    });
+
+    if (movie) {
+      await prisma.review.create({
+        data: {
+          movieId: movie.id,
+          author: review.author,
+          rating: review.rating,
+          comment: review.comment,
+          createdAt: new Date(Date.now() - review.daysAgo * 24 * 60 * 60 * 1000),
+        },
+      });
+      reviewCount++;
+    }
+  }
+
+  console.log(`Seeded ${reviewCount} reviews.`);
+  console.log('Seeding complete!');
 }
 
 main()

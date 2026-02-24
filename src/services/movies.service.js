@@ -1,5 +1,7 @@
 import prisma from '../lib/prisma.js';
 import { Genre } from '@prisma/client';
+import { NotFoundError } from '../utils/AppError.js';
+import { buildSearchFilters, buildPaginationMeta } from '../utils/search.helpers.js';
 
 // Allowed fields for sorting
 const ALLOWED_SORT_FIELDS = ['title', 'rating', 'year'];
@@ -170,11 +172,78 @@ export const updateMovie = async (id, movieData) => {
 };
 
 /**
- * Delete a movie
+ * Advanced movie search with combined filters and pagination.
+ *
+ * WHY A SEPARATE FUNCTION (not reusing getAllMovies)?
+ * getAllMovies handles the existing /movies endpoint with its own filter format
+ * (genre, minRating, year, director, sortBy, order). Changing it would break
+ * the existing frontend that depends on that exact parameter format.
+ *
+ * searchMovies uses a different parameter set (title, yearMin/yearMax range,
+ * ratingMin) and always returns pagination metadata. This keeps both endpoints
+ * working independently.
+ *
+ * @param {Object} params - Already validated by Zod
+ */
+export const searchMovies = async (params) => {
+  const { page, limit, ...filterParams } = params;
+  const where = buildSearchFilters(filterParams);
+  const skip = (page - 1) * limit;
+
+  const [movies, total] = await Promise.all([
+    prisma.movie.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { rating: 'desc' },
+      include: { _count: { select: { reviews: true } } },
+    }),
+    prisma.movie.count({ where }),
+  ]);
+
+  return {
+    movies,
+    pagination: buildPaginationMeta(page, limit, total),
+  };
+};
+
+/**
+ * Delete a movie and its reviews using an explicit transaction.
+ *
+ * WHY $transaction WHEN CASCADE EXISTS?
+ * 1. The schema has onDelete: Cascade, so Postgres WOULD delete reviews
+ *    automatically. But $transaction gives us explicit control and lets
+ *    us return metadata (how many reviews were deleted).
+ * 2. Demonstrates atomicity: if the movie delete fails, the review
+ *    deletes are rolled back automatically.
+ * 3. Real-world pattern: in production, you'd often need to do extra
+ *    work during deletion (audit logs, cache invalidation, notifications)
+ *    that must happen atomically.
+ *
+ * WHAT IS ATOMICITY?
+ * "All or nothing." Either ALL operations in the transaction succeed,
+ * or NONE of them do. If step 2 fails, step 1 is undone. The database
+ * never ends up in a "half-deleted" state.
  */
 export const deleteMovie = async (id) => {
-  const movie = await prisma.movie.delete({
+  // Verify the movie exists before starting the transaction
+  const movie = await prisma.movie.findUnique({
     where: { id },
+    include: { _count: { select: { reviews: true } } },
   });
-  return movie;
+
+  if (!movie) {
+    throw new NotFoundError('Movie', id);
+  }
+
+  // Execute both deletes atomically
+  const [deletedReviews] = await prisma.$transaction([
+    prisma.review.deleteMany({ where: { movieId: id } }),
+    prisma.movie.delete({ where: { id } }),
+  ]);
+
+  return {
+    title: movie.title,
+    reviewsDeleted: deletedReviews.count,
+  };
 };

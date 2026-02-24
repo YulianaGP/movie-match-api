@@ -3,6 +3,7 @@ import 'dotenv/config';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 import moviesRouter from './src/routes/movies.routes.js';
+import dashboardRouter from './src/routes/dashboard.routes.js';
 import { logger, notFound, errorHandler, corsMiddleware } from './src/middlewares/index.js';
 
 // Load Swagger documentation
@@ -28,14 +29,17 @@ app.get('/', (req, res) => {
       movieById: 'GET /api/movies/:id',
       randomMovie: 'GET /api/movies/random',
       stats: 'GET /api/movies/stats',
+      search: 'GET /api/movies/search',
       discover: 'GET /api/movies/discover',
+      dashboard: 'GET /api/dashboard',
       documentation: 'GET /docs'
     }
   });
 });
 
-// Movies routes
+// API routes
 app.use('/api/movies', moviesRouter);
+app.use('/api/dashboard', dashboardRouter);
 
 // Error handling middlewares (must be last)
 app.use(notFound);
