@@ -1,313 +1,221 @@
 # Movie Match API
 
-A professional REST API to explore, manage and discover movies from the IMDb Top 250. Built with Node.js, Express and PostgreSQL (via Prisma ORM) following a clean MVC architecture. Includes AI-powered movie enrichment via OpenRouter and a React frontend.
+> REST API for exploring and discovering movies from the IMDb Top 250. Built with **Node.js**, **Express**, and **PostgreSQL** following a clean MVC architecture. Includes AI-powered movie recommendations via OpenRouter and a React frontend.
 
-## Description
+[![🌐 Live Demo](https://img.shields.io/badge/🌐_Live_Demo-movie--match--ui.vercel.app-000?style=for-the-badge&logo=vercel)](https://movie-match-ui.vercel.app)
+[![📖 API Docs](https://img.shields.io/badge/📖_API_Docs-Swagger_UI-85EA2D?style=for-the-badge&logo=swagger)](https://movie-match-api.vercel.app/docs)
 
-Movie Match is a full-stack application consisting of a backend API and a React frontend. The API provides full CRUD operations with advanced filtering, sorting, and pagination. Data is persisted in a PostgreSQL database hosted on Neon.tech, managed through Prisma ORM v6.
+![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=node.js&logoColor=white)
+![Express](https://img.shields.io/badge/Express-v5-000000?logo=express&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-00e5bf?logo=postgresql&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-v6-2D3748?logo=prisma&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-## Technologies Used
+---
 
-### Backend
-- **Node.js** - JavaScript runtime for server-side development
-- **Express.js v5** - Minimalist and flexible web framework
-- **Prisma ORM v6** - Type-safe database client and schema management
-- **PostgreSQL (Neon.tech)** - Cloud-hosted relational database
-- **ES Modules (ESM)** - Modern JavaScript module system
-- **Nodemon** - Development tool for auto-reload
-- **Swagger UI Express** - Interactive API documentation
-- **CORS** - Cross-Origin Resource Sharing middleware
-- **dotenv** - Environment variable management
+## Preview
 
-### Frontend
-- **React 19** - UI library for building user interfaces
-- **Vite** - Fast build tool and development server
+![Movie Match UI](./docs/preview.jpeg)
 
-## Architecture
+---
 
-### Project Structure
+## Highlights
+
+- **AI-powered discovery** — `GET /api/movies/discover` calls OpenRouter (Llama 3.2) to return AI-enriched movie recommendations with summaries and context
+- **Clean MVC architecture** — Routes → Controllers → Services → Database, with a singleton Prisma client and a centralized middleware pipeline
+- **Full-text filtering** — combine genre, rating, year, and director filters with sorting and pagination in a single request
+- **Nested resource design** — reviews live under `/api/movies/:id/reviews` with cascade delete when a movie is removed
+- **Interactive API docs** — full OpenAPI 3.0 spec served via Swagger UI at `/docs`
+
+---
+
+## Table of Contents
+
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [API Endpoints](#api-endpoints)
+- [Prerequisites](#prerequisites)
+- [Local Setup](#local-setup)
+- [Environment Variables](#environment-variables)
+- [Available Scripts](#available-scripts)
+- [License](#license)
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Runtime | Node.js 18+ |
+| Framework | Express.js v5 |
+| Database | PostgreSQL (Neon) via Prisma ORM v6 |
+| AI Integration | OpenRouter API (Llama 3.2) |
+| API Docs | Swagger UI + OpenAPI 3.0 |
+| Frontend | React 19 + Vite |
+| Module System | ES Modules (ESM) |
+
+---
+
+## Project Structure
 
 ```
-movie-match/
-├── movie-match-api/                        # Backend API
-│   ├── prisma/
-│   │   ├── schema.prisma                   # Database schema definition
-│   │   └── seed.js                         # Database seed (30 movies)
-│   ├── data/
-│   │   └── movies.js                       # Original dataset (legacy)
-│   ├── docs/
-│   │   └── swagger.yaml                    # OpenAPI 3.0 documentation
-│   ├── src/
-│   │   ├── controllers/
-│   │   │   ├── movies.controller.js        # Movie request/response handling
-│   │   │   └── reviews.controller.js       # Review validation and HTTP logic
-│   │   ├── lib/
-│   │   │   └── prisma.js                   # Prisma client singleton
-│   │   ├── middlewares/
-│   │   │   ├── cors.middleware.js           # CORS configuration
-│   │   │   ├── errorHandler.middleware.js   # Global error handling
-│   │   │   ├── logger.middleware.js         # Request logging with timestamp
-│   │   │   ├── notFound.middleware.js       # Centralized 404 handler
-│   │   │   └── index.js                    # Barrel export for middlewares
-│   │   ├── routes/
-│   │   │   ├── movies.routes.js            # Movie endpoint definitions (CRUD)
-│   │   │   └── reviews.routes.js           # Review nested routes (mergeParams)
-│   │   ├── services/
-│   │   │   ├── movies.service.js           # Movie business logic with Prisma
-│   │   │   ├── reviews.service.js          # Review CRUD operations
-│   │   │   └── ai.service.js               # AI enrichment via OpenRouter
-│   │   ├── filters/
-│   │   │   └── movies.filters.js           # Pure filter functions (legacy)
-│   │   └── utils/
-│   │       └── response.js                 # Response format helpers
-│   ├── .env.example                        # Environment variables template
-│   ├── index.js                            # Server bootstrap
-│   └── package.json
-│
-└── movie-match-ui/                         # Frontend React App
-    └── src/
-        ├── components/
-        │   ├── MovieList.jsx               # Movie cards with edit/delete
-        │   ├── MovieForm.jsx               # Create movie form
-        │   ├── MovieEditForm.jsx           # Inline edit form
-        │   ├── MovieFilters.jsx            # Genre, rating, director filters
-        │   └── Pagination.jsx              # Page navigation controls
-        ├── services/
-        │   └── api.js                      # API client with fetch
-        ├── App.jsx                         # Main application component
-        └── App.css                         # Application styles
+movie-match-api/
+├── prisma/
+│   ├── schema.prisma          # Database schema (Movie, Review, Genre enum)
+│   └── seed.js                # Seeds 30 IMDb Top 250 movies
+├── docs/
+│   └── swagger.yaml           # OpenAPI 3.0 specification
+├── src/
+│   ├── controllers/
+│   │   ├── movies.controller.js    # HTTP request/response handling
+│   │   └── reviews.controller.js   # Review validation and responses
+│   ├── services/
+│   │   ├── movies.service.js       # Movie business logic + Prisma queries
+│   │   ├── reviews.service.js      # Review CRUD operations
+│   │   └── ai.service.js           # AI enrichment via OpenRouter
+│   ├── routes/
+│   │   ├── movies.routes.js        # Movie endpoint definitions
+│   │   └── reviews.routes.js       # Nested review routes (mergeParams)
+│   ├── middlewares/
+│   │   ├── cors.middleware.js
+│   │   ├── errorHandler.middleware.js
+│   │   ├── logger.middleware.js
+│   │   └── notFound.middleware.js
+│   └── utils/
+│       └── response.js             # Consistent response format helpers
+└── index.js                        # Server bootstrap
 ```
 
-### Design Patterns
-
-- **MVC Architecture**: Routes -> Controllers -> Services -> Database (Prisma)
-- **Singleton Pattern**: Single Prisma client instance across the application
-- **Middleware Pipeline**: CORS -> Logger -> Body Parser -> Routes -> NotFound -> ErrorHandler
-- **Async/Await**: All database operations are non-blocking
-- **Separation of Concerns**: Frontend and backend in separate directories
-- **ES Modules**: Modern `import/export` syntax
+---
 
 ## API Endpoints
 
-### Read Operations
+### Movies
 
-| Method | Endpoint               | Description                        |
-|--------|------------------------|------------------------------------|
-| GET    | `/`                    | Welcome message with endpoint list |
-| GET    | `/api/movies`          | List all movies (with filters)     |
-| GET    | `/api/movies/:id`      | Get movie by ID                    |
-| GET    | `/api/movies/random`   | Get a random movie                 |
-| GET    | `/api/movies/stats`    | Movie statistics by genre          |
-| GET    | `/api/movies/genres`   | Valid genre list (from enum)       |
-| GET    | `/api/movies/discover` | AI-enriched random movies          |
-| GET    | `/docs`                | Swagger UI documentation           |
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/movies` | List all movies (filters + sorting + pagination) |
+| GET | `/api/movies/:id` | Get movie by ID (includes reviews) |
+| GET | `/api/movies/random` | Get a random movie |
+| GET | `/api/movies/stats` | Movie statistics by genre |
+| GET | `/api/movies/genres` | Valid genre list (from enum) |
+| GET | `/api/movies/discover` | AI-enriched movie recommendations |
+| POST | `/api/movies` | Create a new movie |
+| PUT | `/api/movies/:id` | Update a movie |
+| DELETE | `/api/movies/:id` | Delete a movie (cascades reviews) |
+| GET | `/docs` | Swagger UI documentation |
 
-### Write Operations
+### Reviews
 
-| Method | Endpoint              | Description         |
-|--------|-----------------------|---------------------|
-| POST   | `/api/movies`         | Create a new movie  |
-| PUT    | `/api/movies/:id`     | Update a movie      |
-| DELETE | `/api/movies/:id`     | Delete a movie      |
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/movies/:movieId/reviews` | List reviews for a movie |
+| POST | `/api/movies/:movieId/reviews` | Create a review |
+| PUT | `/api/movies/:movieId/reviews/:reviewId` | Update a review |
+| DELETE | `/api/movies/:movieId/reviews/:reviewId` | Delete a review |
 
-### Review Operations
+### Query Parameters (`GET /api/movies`)
 
-| Method | Endpoint                                  | Description                  |
-|--------|-------------------------------------------|------------------------------|
-| GET    | `/api/movies/:movieId/reviews`            | List reviews for a movie     |
-| POST   | `/api/movies/:movieId/reviews`            | Create a review              |
-| PUT    | `/api/movies/:movieId/reviews/:reviewId`  | Update a review              |
-| DELETE | `/api/movies/:movieId/reviews/:reviewId`  | Delete a review              |
-
-### Query Parameters (GET /api/movies)
-
-| Parameter  | Description                        | Example              |
-|------------|------------------------------------|----------------------|
-| genre      | Filter by genre (enum value)       | `?genre=ACTION`      |
-| minRating  | Minimum rating                     | `?minRating=8.5`     |
-| year       | Filter by year                     | `?year=1994`         |
-| director   | Partial match (case-insensitive)   | `?director=nolan`    |
-| sortBy     | Sort field: title, rating, year    | `?sortBy=rating`     |
-| order      | Sort direction: asc or desc        | `?order=desc`        |
-| page       | Page number (starts at 1)          | `?page=1`            |
-| limit      | Results per page                   | `?limit=10`          |
+| Parameter | Description | Example |
+|---|---|---|
+| `genre` | Filter by genre enum | `?genre=ACTION` |
+| `minRating` | Minimum IMDb rating | `?minRating=8.5` |
+| `year` | Filter by release year | `?year=1994` |
+| `director` | Partial match, case-insensitive | `?director=nolan` |
+| `sortBy` | Sort field: `title`, `rating`, `year` | `?sortBy=rating` |
+| `order` | Sort direction: `asc` or `desc` | `?order=desc` |
+| `page` | Page number (starts at 1) | `?page=2` |
+| `limit` | Results per page | `?limit=10` |
 
 ### Response Format
 
-**Success (list):**
 ```json
-{
-  "success": true,
-  "count": 10,
-  "total": 30,
-  "data": [...]
-}
+// List response
+{ "success": true, "count": 10, "total": 30, "data": [...] }
+
+// Single resource
+{ "success": true, "count": 1, "data": { "id": 1, "title": "..." } }
+
+// Error
+{ "success": false, "error": "Movie not found" }
 ```
 
-**Success (single):**
-```json
-{
-  "success": true,
-  "count": 1,
-  "data": { "id": 1, "title": "The Shawshank Redemption", ... }
-}
-```
+---
 
-**Error:**
-```json
-{
-  "success": false,
-  "error": "Movie not found"
-}
-```
+## Prerequisites
 
-## Installation and Usage
+- Node.js v18+
+- PostgreSQL (or a [Neon](https://neon.tech) account)
+- [OpenRouter](https://openrouter.ai) API key (optional — only needed for `/discover`)
 
-### Prerequisites
+---
 
-- Node.js v18 or higher
-- npm v9 or higher
-- PostgreSQL database (Neon.tech recommended)
+## Local Setup
 
-### Backend Setup
-
-1. Clone the repository:
 ```bash
+# 1. Clone the repository
 git clone https://github.com/YulianaGP/movie-match-api.git
 cd movie-match-api
-```
 
-2. Install dependencies:
-```bash
+# 2. Install dependencies
 npm install
-```
 
-3. Configure environment variables:
-```bash
+# 3. Set up environment variables
 cp .env.example .env
-```
+# Edit .env with your DATABASE_URL
 
-Edit `.env` and set your `DATABASE_URL` (from Neon.tech):
-```
-DATABASE_URL="postgresql://user:password@host.neon.tech/neondb?sslmode=require"
-PORT=3000
-```
-
-4. Sync database schema and generate Prisma client:
-```bash
+# 4. Push schema and generate Prisma client
 npx prisma db push
 npx prisma generate
-```
 
-5. Seed the database with 30 movies:
-```bash
+# 5. Seed the database with 30 movies
 npx prisma db seed
-```
 
-6. Start the server:
-```bash
+# 6. Start the development server
 npm run dev
 ```
 
-### Frontend Setup
+Server runs at `http://localhost:3000` — API docs at `http://localhost:3000/docs`.
 
-1. Navigate to the frontend directory:
-```bash
-cd movie-match-ui
-```
+**To run the frontend:**
 
-2. Install dependencies:
 ```bash
+cd ../movie-match-ui
 npm install
-```
-
-3. Start the development server:
-```bash
 npm run dev
 ```
 
-4. Open `http://localhost:5173` in your browser.
+Frontend runs at `http://localhost:5173`. Both servers must be running simultaneously.
 
-> Both servers must be running simultaneously for the full application to work.
+---
 
-### Environment Variables
+## Environment Variables
 
-| Variable            | Description                          | Required | Default |
-|---------------------|--------------------------------------|----------|---------|
-| DATABASE_URL        | PostgreSQL connection string (Neon)  | Yes      | -       |
-| PORT                | Server port                          | No       | 3000    |
-| OPENROUTER_API_KEY  | API key from OpenRouter              | No*      | -       |
-| CORS_ORIGIN         | Allowed origins for CORS             | No       | *       |
+| Variable | Description | Required |
+|---|---|---|
+| `DATABASE_URL` | PostgreSQL connection string (Neon) | Yes |
+| `PORT` | Server port | No (default: 3000) |
+| `OPENROUTER_API_KEY` | API key from [OpenRouter](https://openrouter.ai) | No* |
+| `CORS_ORIGIN` | Allowed origins for CORS | No (default: `*`) |
 
-*Required only for the `/api/movies/discover` AI enrichment feature.
+*Required only for the `/api/movies/discover` AI feature. The endpoint degrades gracefully without it.
+
+---
 
 ## Available Scripts
 
-### Backend (movie-match-api)
-- `npm start` - Start the server in production mode
-- `npm run dev` - Start the server with nodemon (auto-reload)
-- `npx prisma db push` - Sync schema with database
-- `npx prisma generate` - Generate Prisma client
-- `npx prisma db seed` - Seed database with initial data
-- `npx prisma studio` - Open Prisma Studio (visual database editor)
+```bash
+npm start              # Start server in production mode
+npm run dev            # Start server with nodemon (auto-reload)
 
-### Frontend (movie-match-ui)
-- `npm run dev` - Start Vite development server
-- `npm run build` - Build for production
+npx prisma db push     # Sync schema with database
+npx prisma generate    # Regenerate Prisma client
+npx prisma db seed     # Seed database with 30 movies
+npx prisma studio      # Open Prisma Studio (visual DB editor)
+```
 
-## Labs Completed
-
-### Lab 10: Professional REST API
-- Filters: genre, minRating, year, director (combinable)
-- Sorting: by title, rating, or year (asc/desc)
-- Pagination: page and limit support
-- Statistics endpoint
-- Modular MVC architecture
-
-### Lab 11: AI Integration
-- AI Service: OpenRouter integration with Llama 3.2
-- Discover Endpoint: `GET /api/movies/discover`
-- Graceful Degradation: Works without API key
-
-### Lab 12: Middleware, Documentation & Deploy Preparation
-- Middlewares: Logger, CORS, NotFound (404), ErrorHandler (500)
-- Swagger Documentation: Full OpenAPI 3.0 spec
-- Environment Variables: `.env.example` template
-- Deploy Ready: CORS configured, error handling environment-aware
-
-### Lab 13: Database Migration & Frontend
-- Migrated from in-memory data to PostgreSQL (Neon.tech)
-- Prisma ORM v6 for database management
-- Full CRUD operations (Create, Read, Update, Delete)
-- Database seeding with 30 movies
-- React frontend with Vite
-- UI features: movie list, create/edit/delete, filters, pagination
-
-### Lab 14: Enums, Constraints & Filters
-- Prisma enum `Genre` with 6 values: ACTION, COMEDY, DRAMA, HORROR, SCIFI, THRILLER
-- Normalized 16 legacy genres to 6 enum values via mapping
-- Genre validation on POST/PUT (rejects invalid genres with 400)
-- New endpoint: `GET /api/movies/genres` (dynamic, not hardcoded)
-- Frontend dropdowns and checkboxes consume genres from API
-- Combined filters: genre + minRating + director + year
-
-### Lab 15: One-to-Many Relationship — Reviews
-- New `Review` model with 1:N relation to `Movie` (Prisma)
-- Cascade delete: removing a movie deletes its reviews
-- Full CRUD: getByMovie, getById, create, update, delete
-- Nested routes with `mergeParams: true`
-- `getMovieById` now includes reviews sorted by newest first
-- `sendSuccess` helper updated to accept optional HTTP status code
-- Input validation in controller: author, comment (required), rating (1-5)
-- Zero impact on existing movie endpoints, filters, and genre logic
-
-## Author
-
-**Yuliana GP**
-
-- GitHub: [@YulianaGP](https://github.com/YulianaGP)
-- Project: [movie-match-api](https://github.com/YulianaGP/movie-match-api)
+---
 
 ## License
 
-ISC
+MIT — free for personal and commercial use.
